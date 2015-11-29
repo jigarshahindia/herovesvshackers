@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Ad Card UI</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap-theme.min.css">
+    <link rel="stylesheet" href="assets/stylesheets/formStyle.css">
+    <script type="text/javascript" src="node_modules/jquery/dist/jquery.min.js"></script>
+    <script type="text/javascript" src="node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
+    <script type="text/javascript" charset="utf8" src="assets/javascript/formScript"></script>
+
+</head>
+
+<body> 
+<div class="container">
+    <div class="row">
+    <div class="col-md-5  toppad  pull-right col-md-offset-3 ">
+        <a href="edit.html" >Edit Profile</a>
+        <a href="edit.html" >Logout</a>
+        <br>
+        <p class=" text-info">May 05,2014,03:00 pm </p>
+    </div>
+    <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6 col-xs-offset-0 col-sm-offset-0 col-md-offset-3 col-lg-offset-3 toppad" >
+        <div class="alert alert-success hide" id="successMsg">
+            <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+            <strong>Success!</strong>
+        </div>
+        <div class="alert alert-danger hide" id="createError">
+            <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+            <strong>Sorry!</strong> Something went wrong, please try again.
+          </div>
+        <div id="inputEntry" style="clear:both;">
+            <div id="inputBox" class="form-group">
+                <div id="block-left" class="form-group col-md-5 col-lg-5" style="float:left;">
+                    <label for="usr">User Key:</label>
+                    <input type="text" class="form-control" id="usrKey">
+                </div>
+                <div id="block-right" class="form-group col-md-5 col-lg-5" style="float:right;">
+                    <label for="usr">User Email:</label>
+                    <input type="text" class="form-control" id="usrEmail">
+                </div>
+                <button type="button" class="btn btn-primary col-md-2 col-lg-2" id="btn-get-info" style="clear:both; margin-left:15px;">Fetch</button>    
+            </div>
+        </div>
+        <div class="panel panel-info" style="padding-top:130px;">
+            <div class="panel-heading">
+                <h3 class="panel-title">Account Details</h3>
+            </div>
+            <div class="panel-body">
+                <div class="row">
+                    <div class="col-md-3 col-lg-3 " align="center">
+                        <img alt="User Pic" src="" class="img-circle img-responsive">
+                    </div>
+                
+                    <div class=" col-md-9 col-lg-9 "> 
+                        <table class="table table-user-information">
+                            <tbody>
+                                <tr>
+                                    <td></td>
+                                    <td>Name</td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td>Uid:</td>
+                                    <td id="uid"></td>
+                                </tr>
+                                <tr>
+                                    <td>Name:</td>
+                                    <td id="name">swapnil</td>
+                                </tr>
+                                <tr>
+                                    <td>Date of Birth</td>
+                                    <td id="dob">01/24/1988</td>
+                                </tr>
+                                <tr>
+                                    <td>Gender</td>
+                                    <td id="gender">Male</td>
+                                </tr>
+                                <tr>
+                                    <td>Home Address</td>
+                                    <td id="home-address">Metro Manila,Philippines</td>
+                                </tr>
+                                 <tr>
+                                    <td>Email</td>
+                                    <td id="email"></td>
+                                </tr>
+                                    <td>Phone Number</td>
+                                    <td id="phone"></td>
+                                </tr> 
+                            </tbody>
+                        </table>
+                        <a href="#" class="btn btn-primary">Print</a>
+                    </div>
+                </div>
+            </div>
+                <div class="panel-footer hide">
+                    <a data-original-title="Broadcast Message" data-toggle="tooltip" type="button" class="btn btn-sm btn-primary"><i class="glyphicon glyphicon-envelope"></i></a>
+                    <span class="pull-right">
+                        <a href="edit.html" data-original-title="Edit this user" data-toggle="tooltip" type="button" class="btn btn-sm btn-warning"><i class="glyphicon glyphicon-edit"></i></a>
+                        <a data-original-title="Remove this user" data-toggle="tooltip" type="button" class="btn btn-sm btn-danger"><i class="glyphicon glyphicon-remove"></i></a>
+                    </span>
+                </div>
+            </div>
+        </div>
+      </div>
+    </div>
+</body>
+
+</html>

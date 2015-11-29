@@ -1,0 +1,369 @@
+$(document).ready(function () {
+    var redirctUrl = "";
+    $("form").submit(function (event) {
+        event.preventDefault()
+    });
+
+    var fieldsHidden = [];
+    if (fieldsHidden.length > 0) {
+        for (var i = 0; i < fieldsHidden.length; i++) {
+            $('#' + fieldsHidden[i]).addClass('hide');
+        }
+    }
+
+    var source = function () {
+        var src = "tutors.sokrati.com";
+        return src;
+    }
+
+    var getFormData = function () {
+        var data = {
+            name: $('#inputName').val(),
+            password: $('#inputPassword').val(),
+            email: $('#inputEmail').val(),
+            mobile: $('#inputMobile').val(),
+            /*website: $('#inputWebsite').val(),*/
+            domain: source(),
+            redirectUrl: "http://doors.sokrati.com/smblauncher/"
+        }
+        if ($('#inputCouponCode').val() != null && 
+            $('#inputCouponCode').val() !='' ) {
+            data.couponCode = $('#inputCouponCode').val();
+        }
+        return data;
+    };
+
+    function supports_input_placeholder() {
+        var i = document.createElement('input');
+        return 'placeholder' in i;
+    }
+
+    if (!supports_input_placeholder()) {
+        var fields = document.getElementsByTagName('INPUT');
+        for (var i = 0; i < fields.length; i++) {
+            if (fields[i].hasAttribute('placeholder')) {
+                fields[i].defaultValue = fields[i].getAttribute('placeholder');
+                fields[i].onfocus = function () {
+                    if (this.value == this.defaultValue) this.value = '';
+                }
+                fields[i].onblur = function () {
+                    if (this.value == '') this.value = this.defaultValue;
+                }
+            }
+        }
+    }
+
+    var areInputsValid = function () {
+        var error = [];
+        if ($('#inputName').val().length < 2) {
+            $('#Name').addClass('has-error');
+        } else {
+            $('#Name').removeClass('has-error');
+            $('#Name').addClass('has-success');
+        }
+
+        if ($('#inputEmail').val().length < 3) {
+            $('#Email').addClass('has-error');
+        } else {
+            $('#Email').removeClass('has-error');
+            $('#Email').addClass('has-success');
+        }
+
+        if ($('#inputPassword').val().length < 5) {
+            $('#Password').addClass('has-error');
+            error.push("Password must be of minimum five characters.<br/>");
+        } else {
+            $('#Password').removeClass('has-error');
+            $('#Password').addClass('has-success');
+        }
+
+        if (isMobileValid()) {
+            $('#Mobile').removeClass('has-error');
+            $('#Mobile').addClass('has-success');
+        } else {
+            $('#Mobile').addClass('has-error');
+            error.push("Please provide a valid mobile number.<br/>");
+        }
+
+        /*if ($('#inputPassword').val() != $('#inputRetypePassword').val()) {
+            $('#Password').addClass('has-error');
+            $('#RetypePassword').addClass('has-error');
+            error.push('Passwords do not match.');
+        } else {
+            $('#Password').removeClass('has-error');
+            $('#Password').addClass('has-success');
+            $('#RetypePassword').removeClass('has-error');
+            $('#RetypePassword').addClass('has-success');
+        }*/
+
+        if (error.length > 0) {
+            $("#errTxt").html("<b>" + error + "</b>");
+            $("#errorMsg").removeClass("hide");
+            return false;
+        } else {
+            return true;
+        }
+    };
+
+    var isEmailValid = function () {
+        var emailRegex = /^([a-zA-Z0-9_\.\-\+])+\@(([a-zA-Z0-9\-])+\.)+([a-zA-Z0-9]{2,4})+$/i;
+        if (!emailRegex.test($('#inputEntryEmail').val())) {
+            $('#EmailOnly').addClass('has-error');
+            return false;
+        } else {
+            $('#EmailOnly').removeClass('has-error');
+            $('#EmailOnly').addClass('has-success');
+            return true;
+        }
+    }
+
+    var isMobileValid = function () {
+        var mobileRegEx = /^[\s()+-]*([0-9][\s()+-]*){1,12}$/;
+        if (!mobileRegEx.test($('#inputMobile').val())) {
+            $('#inputMobile').addClass('has-error');
+            return false;
+        } else {
+            $('#inputMobile').addClass('has-success');
+            return true;
+        }
+    }
+
+    var showDetailsForm = function () {
+        $('#emailOnlyForm').animate({
+            'opacity': '0'
+        }, 500, function () {
+            $('#emailOnlyForm').addClass('hide');
+            $('#inputEmail').val($('#inputEntryEmail').val());
+            $('#inputEmail').attr('readonly', true);
+            $('#detailsForm').removeClass('hide').animate({
+                'opacity': '1'
+            });
+        });
+    }
+    $("#errClose").on('click', function () {
+        $("#errorMsg").addClass("hide");
+    })
+
+    $("#successClose").on('click', function () {
+        $("#successMsg").addClass("hide");
+        location.reload(true);
+    })
+
+    $("#redirct").on('click', function () {
+        window.top.location.href = redirctUrl;
+    })
+
+    $("#resend").on('click', function () {
+        $("#successMsg").addClass("hide");
+        if (window.XMLHttpRequest) var req = new XMLHttpRequest();
+        else var req = new ActiveXObject("Microsoft.XMLHTTP");
+        req.open('GET', 'http://services.sokrati.com/signupService/' +
+            'resendVerificationMail?email=' + $('#inputEntryEmail').val() +
+            '&source=' + source(), true);
+        req.send();
+        $("#loading").removeClass('hide');
+        req.onreadystatechange = function () {
+            $("#loading").addClass('hide');
+            if (req.readyState == 4) {
+                try {
+                    var res = JSON.parse(req.responseText);
+                    if (req.status === 200) {
+                        if (res && res.status === "OK") {
+                            $("#resendMsg").addClass('hide');
+                            $("#successTxt").html(
+                                "Activation email has been sent " +
+                                "successsfully. Please check your emails" +
+                                " for account activation.");
+                            $("#successMsg").removeClass("hide");
+                        } else {
+                            $("#errTxt").html("<b>Something went wrong. " +
+                                "Please try again later.</b>");
+                            $("#errorMsg").removeClass("hide");
+                        }
+                    } else {
+                        $("#errTxt").html("<b> Something went wrong. " +
+                            "Please try again later.</b>");
+                        $("#errorMsg").removeClass("hide");
+                    }
+                } catch (e) {
+                    console.log(e);
+                    $("#errTxt").html("<b>Something went wrong. Please try " +
+                        "again later.</b>");
+                    $("#errorMsg").removeClass("hide");
+                }
+            }
+        }
+    })
+
+    $("#cancelRedir").on('click', function () {
+        location.reload(true);
+    });
+
+    $("#cancelResend").on('click', function () {
+        location.reload(true);
+    });
+
+    $("#inputEntryEmail").keydown(function (e) {
+        if (e.which == 13) {
+            return false;
+            // submitEmailEntry();
+        }
+    });
+
+    $('#emailSubmitBtn').on('click', function () {
+        submitEmailEntry();
+    });
+
+    var submitEmailEntry = function () {
+        if (isEmailValid()) {
+
+            $("#inputEntryEmail").removeClass("has-error");
+            $("#errorMsg").addClass("hide");
+            $("#inputEntryEmail").addClass("has-success");
+            $('#emailSubmitBtn').attr('disabled', true);
+            if (window.XMLHttpRequest) var req = new XMLHttpRequest();
+            else var req = new ActiveXObject("Microsoft.XMLHTTP");
+            req.open('GET', 'http://services.sokrati.com/signupService/' +
+                'leadVerification?email=' + $('#inputEntryEmail').val() +
+                '&source=' + source(), true);
+            req.send();
+            $("#loading").removeClass('hide');
+            req.onreadystatechange = function () {
+                if (req.readyState === 4) {
+                    try {
+                        var res = JSON.parse(req.responseText);
+                        if (req.status === 200) {
+                            $("#loading").addClass('hide');
+                            if (res && res.status === "SUCCESS" &&
+                                res.redirect === false) {
+                                showDetailsForm();
+                            } else if (res && res.status === "SUCCESS" &&
+                                res.redirect === true) {
+                                redirctUrl = res.url
+                                $("#redirMsg").removeClass('hide');
+                            } else if (res && res.status === "FAILED" &&
+                                res.message === "USER ACCOUNT ALREADY EXISTS." &&
+                                !source().match("tutors.sokrati.com")) {
+                                $("#resendMsg").removeClass('hide');
+                            } else if (res && res.status === "FAILED" 
+                                       && res.error != null) {
+                                $("#errTxt").html("<b>Something went wrong. " +
+                                                  "Please try again later.</b>");
+                                $("#errorMsg").removeClass("hide");
+                            }
+                        } else {
+                            $("#errTxt").html("<b>Something went wrong. " +
+                                              "Please try again later.</b>");
+                            $("#errorMsg").removeClass("hide");
+                        }
+                    } catch (err) {
+                        console.log(err);
+                        $("#errTxt").html("<b>Something went wrong. " +
+                            "Please try again later.</b>");
+                        $("#errorMsg").removeClass("hide");
+                    }
+                }
+            }
+        } else {
+            $("#errTxt").html("<b>Please enter a valid email address.</b>");
+            $("#errorMsg").removeClass("hide");
+        }
+    }
+
+    $('#detailsSubmitBtn').on('click', function (callback) {
+        if (areInputsValid()) {
+            $("#successMsg").addClass("hide");
+            $("#errorMsg").addClass("hide");
+            $('#detailsSubmitBtn').attr('disabled', true);
+            if (window.XMLHttpRequest) var req = new XMLHttpRequest();
+            else var req = new ActiveXObject("Microsoft.XMLHTTP");
+            var data = JSON.stringify(getFormData());
+            req.open('POST', 'http://services.sokrati.com/signupService/signup',
+                true);
+            req.send(data);
+            $("#loading").removeClass('hide');
+            req.onreadystatechange = function () {
+                $("#loading").addClass('hide');
+                if (req.readyState == 4) {
+                    try {
+                        var res = JSON.parse(req.responseText);
+                        if (req.status == 200) {
+                            if (res && res.status == "OK"){
+                                if(res.coupon == true){
+                                    if(source().match("tutors") != null)
+                                    {
+                                        $("#successTxt").html(
+                                            "<p style='text-align:center'> Your <b>Prepaid AdCard of Rs.3000</b>" +
+                                            " will be applied to your account.</p>" +
+                                            "<p style='text-align:center'> Thank you for registering with us.</p>"
+                                        );    
+                                    }
+                                    else
+                                    {
+                                        $("#successTxt").html(
+                                            "<p style='text-align:center'> Your <b>Prepaid AdCard of Rs.5000</b>" +
+                                            " will be applied to your account.</p>" +
+                                            "<p style='text-align:center'>  We have sent you an activation" +
+                                            " mail. Please check your emails and" +
+                                            " and complete the signup.</p>"
+                                        );
+                                    }
+                                                                        
+                                } else {
+                                    if(source().match("tutors") != null)
+                                    {
+                                        $("#successTxt").html(
+                                            "<p style='text-align:center'>Thank you for registering with us.</p>"
+                                        );    
+                                    }
+                                    else
+                                    {
+                                        $("#successTxt").html(
+                                            "<p style='text-align:center'>We have sent you an activation " +
+                                            "email. Please check your emails and " +
+                                            "complete the signup.</p>"
+                                        );
+                                    }
+                                }
+                                $("#successMsg").removeClass("hide");
+                                $("#detailsForm").addClass('hide');
+                                try {
+                                    _sokratiLeadRegistration(
+                                        $('#inputEmail').val(),
+                                        $('#inputName').val(),
+                                        $('#inputMobile').val()
+                                    );
+                                } catch (err) {
+                                    console.log(err)
+                                }
+                            } else if (res.error ==  true && 
+                                       res.hasOwnProperty('message') && 
+                                       res.message =="Invalid coupon code") {
+                                $("#errTxt").html(
+                                    "<b>Coupon code provided is " +
+                                    "invalid. Please provide a valid " +
+                                    "code and try again.</b>"
+                                );
+                                $("#errorMsg").removeClass("hide");
+                                $('#detailsSubmitBtn').attr('disabled', false);
+                            } else if (res.error != null || res.error == true) {
+                                $("#errTxt").html("<b>Something went wrong. " +
+                                                  "Please try again later.</b>");
+                                $("#errorMsg").removeClass("hide");
+                            }
+                        } else {
+                            $("#errTxt").html("<b>Something went wrong. Please" +
+                                              " try again later.</b>");
+                            $("#errorMsg").removeClass("hide");
+                        }
+                    } catch (error) {
+                        console.log(error);
+                        $("#errTxt").html("<b>Something went wrong. Please" +
+                                          " try again later.</b>");
+                        $("#errorMsg").removeClass("hide");
+                    }
+                }
+            }
+        }
+    });
+});

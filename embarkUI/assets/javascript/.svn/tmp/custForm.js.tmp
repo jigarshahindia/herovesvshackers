@@ -1,0 +1,678 @@
+$(document).ready(function () {
+    var redirctUrl = "";
+    var formVC = "";
+    var formLeadid = "";
+    var formEmail = "";
+    var formPassword = "";
+    var formPhone = "";
+    var formUbid = "unique12345";
+    var _sokFormObject = {
+        'style': {
+            'color': '#fff'
+        },
+        'launcherUrl': 'http://doors.sokrati.com/launcher/',
+        'dsrtUrl': 'http://doors.sokrati.com/dsrt/client'
+    };
+    
+    $("form").submit(function (event) {
+        event.preventDefault()
+    });
+
+    $("#inputEntryEmail").keydown(function (e) {
+        if (e.which == 13) {
+            return false;
+        }
+    });
+
+    var bootIntercom = function (emailID) {
+        Intercom('boot', {  
+            app_id: 'caa8e3j3',  
+            email: emailID,
+            created_at: 1234567890,
+            name: null,
+            user_id: null,
+            domain_url: window.location.host,
+            logged_into: "signup"
+        });
+    };
+
+    var source = function () {
+        var uri = document.referrer;
+        var src = uri.split('//')[1];
+        return src;
+    };
+
+    var getFormDataForAuth = function () {
+        console.log(formLeadid);
+        var data = {
+            email: formEmail,
+            password: formPassword,
+            ubid: formUbid
+        }
+        return data;
+    };
+
+    var getFormData = function () {
+        var data = {
+            email: formEmail,
+            mobile: formPhone,
+            password: formPassword,
+            leadid: formLeadid,
+            verificationCode: formVC
+        }
+        return data;
+    };
+
+    var areInputsValid = function () {
+        var error = [];
+
+        if ($('#inputEmail').val().length < 3) {
+            $('#Email').addClass('has-error');
+            error.push("Invalid Email Address.<br/>");
+        } else {
+            $('#Email').removeClass('has-error');
+            $('#Email').addClass('has-success');
+        }
+
+        if ($('#inputPassword').val().length < 5) {
+            $('#Password').addClass('has-error');
+            error.push("Password must be of minimum five characters.<br/>");
+        } else {
+            $('#Password').removeClass('has-error');
+            $('#Password').addClass('has-success');
+        }
+
+        if (isMobileValid()) {
+            $('#Mobile').removeClass('has-error');
+            $('#Mobile').addClass('has-success');
+        } else {
+            $('#Mobile').addClass('has-error');
+            error.push("Please provide a valid mobile number.<br/>");
+        }
+
+        if (error.length > 0) {
+            $("#errTxt").html("<b>" + error + "</b>");
+            $("#errorMsg").removeClass("hide");
+            return false;
+        } else {
+            return true;
+        }
+    };
+
+    var isEmailValid = function () {
+        var emailRegex = /^([a-zA-Z0-9_\.\-\+])+\@(([a-zA-Z0-9\-])+\.)+([a-zA-Z0-9]{2,4})+$/i;
+        if (!emailRegex.test($('#inputEntryEmail').val())) {
+            $('#EmailOnly').addClass('has-error');
+            return false;
+        } else {
+            $('#EmailOnly').removeClass('has-error');
+            $('#EmailOnly').addClass('has-success');
+            return true;
+        }
+    };
+
+    var isMobileValid = function () {
+        var mobileRegEx = /^[\s()+-]*([0-9][\s()+-]*){1,12}$/;
+        if (!mobileRegEx.test($('#inputMobile').val())) {
+            $('#inputMobile').addClass('has-error');
+            return false;
+        } else {
+            $('#inputMobile').addClass('has-success');
+            return true;
+        }
+    };
+
+    var showActivationForm = function () {
+        $('#detailsForm').animate({
+            'opacity': '0'
+        }, 500, function () {
+            $('#detailsForm').addClass('hide');
+            $('#inputMobilePrefilled').val($('#inputMobile').val());
+            $('#inputMobilePrefilled').attr("disabled", true );
+            $('#successMessage').addClass('hide');
+            $('#errorMessage').addClass('hide');
+            document.getElementById('inputMobilePrefilled').style.border = "none";
+            document.getElementById('inputMobilePrefilled').style.background = "white";
+            $('#activatationForm').removeClass('hide').animate({
+                'opacity': '1'
+            });
+        });
+    };
+
+
+    var postAuthentication = function () {
+        if (window.XMLHttpRequest) var req = new XMLHttpRequest();
+        else var req = new ActiveXObject("Microsoft.XMLHTTP");
+        var data = JSON.stringify(getFormDataForAuth());
+        req.open('POST', 'http://services.sokrati.com/hadesV2/authenticate', true);
+        req.send(data);
+        var metadata = {
+            email: formEmail,
+            ubid: formUbid
+        }
+        $("#loading").removeClass('hide');
+        req.onreadystatechange = function() {
+            $("#loading").addClass('hide');
+            if (req.readyState == 4) {
+                try {
+                    var res = JSON.parse(req.responseText);
+                    if (req.status == 200) {
+                        if (res && res.status == "OK") {
+                            $('#errorMessage').addClass('hide');
+                            $('#successMessage').removeClass('hide');
+                            $('#successMessage').text(
+                                "Correct Activation Code. " + 
+                                "You are now being redirected to the app"
+                            );
+                            console.log("Here1");
+                            setCookie('UA_TOKEN', res.token);
+                            setCookie('ubid', formUbid);
+                            Intercom(
+                                'trackEvent', 
+                                '007-Authentication-Successful', 
+                                metadata
+                            );
+                            //Redirect to app
+                            console.log(_sokFormObject.launcherUrl);
+                            window.top.location.href = _sokFormObject.launcherUrl;
+                        } else if (res.error != null || res.error == true) {
+                            $('#errorMessage').text("Authentication failed..");
+                            $('#errorMessage').removeClass('hide');
+                            $('#successMessage').addClass('hide');
+                            Intercom(
+                                'trackEvent', 
+                                'ERROR-Authentication-Failed', 
+                                metadata
+                            );
+                            console.log(res.error);
+                        }
+                    } else {
+                        $('#errorMessage').text(
+                            "Something went wrong. " + 
+                            "Please try again later."
+                        );
+                        $('#errorMessage').removeClass('hide');
+                        $('#successMessage').addClass('hide');
+                        Intercom(
+                            'trackEvent', 'ERROR-Authentication-Failed', 
+                            metadata
+                        );
+                        console.log(error);
+                    }
+                } catch (error) {
+                    $('#errorMessage').text("Something went wrong. Please try " + 
+                        "again later.");
+                    $('#errorMessage').removeClass('hide');
+                    $('#successMessage').addClass('hide');
+                    Intercom(
+                        'trackEvent', 'ERROR-Authentication-Failed', 
+                        metadata
+                    );
+                    console.log(error);
+                }
+            }
+        }    
+    };
+
+    var showDetailsForm = function () {
+        $('#emailOnlyForm').animate({
+            'opacity': '0'
+        }, 500, function () {
+            $('#emailOnlyForm').addClass('hide');
+            $('#inputEmail').val($('#inputEntryEmail').val());
+            $('#inputEmail').attr('readonly', true);
+            $('#detailsForm').removeClass('hide').animate({
+                'opacity': '1'
+            });
+        });
+    };
+
+    var setCookie = function (cname, cvalue) {
+        console.log("In setCookie");
+        var d = new Date();
+        var hour = 2;
+        d.setTime(d.getTime() + (hour*60*60*1000));
+        var expires = "expires=" + d.toUTCString();
+        var domain = "; domain=.sokrati.com";
+        var path = "; path=/";
+        document.cookie = cname + "=" + cvalue + "; " + expires + domain + path;
+        console.log(cname + ':' + cvalue);
+    };
+
+    var sendCode = function (email, phone, sourcetag) {
+        if (window.XMLHttpRequest) var req = new XMLHttpRequest();
+        else var req = new ActiveXObject("Microsoft.XMLHTTP");
+        req.open(
+            'GET', 'http://services.sokrati.com/smsSignupService' + 
+            '/sendCode?email=' + email + '&mobile=' + phone
+        );
+        req.send();
+        $("#loading").removeClass('hide');
+        var metadata = {
+            phoneNO: phone,
+            emailID: email
+        }
+        req.onreadystatechange = function() {
+            $("#loading").addClass('hide');
+            if (req.readyState == 4) {
+                try {
+                    var res = JSON.parse(req.responseText);
+                    if (req.status == 200) {
+                        if (res && res.status == "SUCCESS") {
+                            if (sourcetag == 'detailsForm') {
+                                $("#successMsg").removeClass("hide");
+                                $("#detailsForm").addClass('hide');
+                                Intercom(
+                                    'trackEvent', 
+                                    '005-Resend-activation-code-from-details-page', 
+                                    metadata
+                                );
+                                showActivationForm();
+                            } else if(sourcetag == 'activationForm') {
+                                $('#errorMessage').addClass('hide');
+                                $('#successMessage').removeClass('hide');
+                                $('#successMessage').text(
+                                    "The Activation Code has been resent to " + 
+                                    "your phone."
+                                );
+                                Intercom(
+                                    'trackEvent', 
+                                    '006-Resend-activation-code-from-activation-page', 
+                                    metadata
+                                );
+                            }
+                        } else if (res.error != null && res.error == true) {
+                            if (sourcetag == 'detailsForm') {
+                                $("#errTxt").html("<b>Something went wrong. " +
+                                                  "Please try again later.</b>");
+                                $("#errorMsg").removeClass("hide");
+                                Intercom(
+                                    'trackEvent', 
+                                    'ERROR-Get-sendCode-failed-details-page', 
+                                    metadata
+                                );
+                            } else if(sourcetag == 'activationForm') {
+                                $('#errorMessage').text(
+                                    "Something went wrong. Please try " + 
+                                    "resending again."
+                                );
+                                $('#errorMessage').removeClass('hide');
+                                $('#successMessage').addClass('hide');
+                                Intercom(
+                                    'trackEvent', 
+                                    'ERROR-Get-sendCode-failed-activation-page', 
+                                    metadata
+                                );
+                            }
+                            console.log(res.error);
+                        }
+                    } else {
+                        if (sourcetag == 'detailsForm') {
+                            $("#errTxt").html("<b>Something went wrong. " +
+                                              "Please try again later.</b>");
+                            $("#errorMsg").removeClass("hide");
+                            Intercom(
+                                'trackEvent', 
+                                'ERROR-Get-sendCode-failed-details-page', 
+                                metadata
+                            );
+                        } else if(sourcetag == 'activationForm') {
+                            $('#errorMessage').text(
+                                "Something went wrong. Please try again later."
+                            );
+                            $('#errorMessage').removeClass('hide');
+                            $('#successMessage').addClass('hide');
+                            Intercom(
+                                'trackEvent', 
+                                'ERROR-Get-sendCode-failed-activation-page', 
+                                metadata
+                            );
+                        }
+                    }
+                } catch (error) {
+                    if (sourcetag == 'detailsForm') {
+                        $("#errTxt").html("<b>Something went wrong. " +
+                                          "Please try again later.</b>");
+                        $("#errorMsg").removeClass("hide");
+                        Intercom(
+                            'trackEvent', 
+                            'ERROR-Get-sendCode-failed-details-page', 
+                            metadata
+                        );
+                    } else if(sourcetag == 'activationForm') {
+                        $('#errorMessage').text(
+                            "Something went wrong. Please try again later."
+                        );
+                        $('#errorMessage').removeClass('hide');
+                        $('#successMessage').addClass('hide');
+                        Intercom(
+                            'trackEvent', 
+                            'ERROR-Get-sendCode-failed-activation-page', 
+                            metadata
+                        );
+                    }
+                }
+            }
+        }
+    };
+
+    $("#errClose").on('click', function () {
+        $("#errorMsg").addClass("hide");
+    });
+
+    $("#successClose").on('click', function () {
+        $("#successMsg").addClass("hide");
+        location.reload(true);
+    });
+
+    $("#redirct").on('click', function () {
+        window.top.location.href = redirctUrl;
+    });
+
+    $("#pencil").on('click', function () {
+        $( "#inputMobilePrefilled" ).attr( "disabled", false );
+        document.getElementById('inputMobilePrefilled').style.border = "1px solid #ccc";
+
+    });
+
+    $('#resend').on('click', function (callback) {
+        console.log($('#inputEmail').val());
+        sendCode($('#inputEmail').val(), 
+            $('#inputMobilePrefilled').val(), 
+            'activationForm');
+    });
+
+    $('#activate').on('click', function (callback) {
+        if ($('#inputActivationCode').val().length > 3) {
+            formVC = $('#inputActivationCode').val();
+            var metadata = {
+                email: formEmail,
+                mobile: formPhone,
+                leadid: formLeadid,
+                verificationCode: formVC
+            }
+            if (window.XMLHttpRequest) var req = new XMLHttpRequest();
+            else var req = new ActiveXObject("Microsoft.XMLHTTP");
+            var data = JSON.stringify(getFormData());
+            req.open(
+                'POST', 
+                'http://services.sokrati.com/smsSignupService/signupWithSms', 
+                true
+            );
+            req.send(data);
+            $("#loading").removeClass('hide');
+            req.onreadystatechange = function() {
+                $("#loading").addClass('hide');
+                if (req.readyState == 4) {
+                    try {
+                        var res = JSON.parse(req.responseText);
+                        if (req.status == 200) {
+                            if (res && res.status == "SUCCESS") {
+                                $('#errorMessage').addClass('hide');
+                                $('#successMessage').removeClass('hide');
+                                $('#successMessage').text(
+                                    "Correct Activation Code. You are now " + 
+                                    "being redirected to the app"
+                                );
+                                Intercom(
+                                    'trackEvent', 
+                                    '004-Correct-activation-code', 
+                                    metadata
+                                );
+                                postAuthentication();
+                            } else if (res.error != null) {
+                                $('#errorMessage').text(
+                                    "Sorry! Invalid Activation Code."
+                                );
+                                $('#errorMessage').removeClass('hide');
+                                $('#successMessage').addClass('hide');
+                                Intercom(
+                                    'trackEvent', 
+                                    'ERROR-Invalid-activation-code', 
+                                    metadata
+                                );
+                                console.log(res.error);
+                            }
+                        } else {
+                            $('#errorMessage').text(
+                                "Something went wrong. Please try again later."
+                            );
+                            $('#errorMessage').removeClass('hide');
+                            $('#successMessage').addClass('hide');
+                            Intercom(
+                                'trackEvent', 
+                                'ERROR-Post-SmsSignupService-Failed', 
+                                metadata
+                            );
+                            console.log(error);
+                        }
+                    } catch (error) {
+                        $('#errorMessage').text(
+                            "Something went wrong. Please try again later."
+                        );
+                        $('#errorMessage').removeClass('hide');
+                        $('#successMessage').addClass('hide');
+                        Intercom(
+                            'trackEvent', 
+                            'ERROR-Post-SmsSignupService-Failed', 
+                            metadata
+                        );
+                        console.log(error);
+                    }
+                }
+            }
+        } else {
+            //display error for incorrect activation code.
+            $('#errorMessage').text(
+                "Invalid Activation Code. Please enter a valid Activation Code."
+            );
+            $('#errorMessage').removeClass('hide');
+            $('#successMessage').addClass('hide');
+        }
+    });
+    
+    $('#emailSubmitBtn').on('click', function () {
+        submitEmailEntry();
+    });
+
+    var submitEmailEntry = function () {
+        if (isEmailValid()) {
+
+            $("#inputEntryEmail").removeClass("has-error");
+            $("#errorMsg").addClass("hide");
+            $("#inputEntryEmail").addClass("has-success");
+            $('#emailSubmitBtn').attr('disabled', true);
+            var metadata = {
+                email: $('#inputEntryEmail').val()
+            };
+            if (window.XMLHttpRequest) var req = new XMLHttpRequest();
+            else var req = new ActiveXObject("Microsoft.XMLHTTP");
+            req.open(
+                'GET', 'http://services.sokrati.com/smsSignupService/' +
+                'emailVerification?email=' + $('#inputEntryEmail').val() +
+                '&domain=' + source(), true
+            );
+            req.send();
+            $("#loading").removeClass('hide');
+            req.onreadystatechange = function () {
+                if (req.readyState === 4) {
+                    try {
+                        var res = JSON.parse(req.responseText);
+                        if (req.status === 200) {
+                            $("#loading").addClass('hide');
+                            bootIntercom($('#inputEntryEmail').val());
+                            if (res && res.status === "SUCCESS" && 
+                                res.result['alreadyUser'] === false) {
+                                Intercom(
+                                    'trackEvent', 
+                                    'Client-visited-website', 
+                                    metadata
+                                );
+                                showDetailsForm();
+                            } else if (res && res.status === "SUCCESS" && 
+                                res.result['alreadyUser'] === true) {
+                                Intercom(
+                                    'trackEvent', 
+                                    'Client-visited-website-redirected', 
+                                    metadata
+                                );
+                                redirctUrl = res.result['redirectUrl'];
+                                $("#redirMsg").removeClass('hide');
+                            } else {
+                                metadata = {
+                                    email: $('#inputEntryEmail').val(),
+                                    error: res.error
+                                }
+                                Intercom(
+                                    'trackEvent', 
+                                    'ERROR-Get-leadVerification-failed', 
+                                    metadata
+                                );
+                                $("#errTxt").html(
+                                    "<b>Something went wrong. " +
+                                    "Please try again later.</b>"
+                                );
+                                $("#errorMsg").removeClass("hide");
+                            }
+                        } else {
+                            metadata = {
+                                    email: $('#inputEntryEmail').val(),
+                                    errorStatus: req.status
+                                }
+                            Intercom('trackEvent', 
+                                'ERROR-Get-leadVerification-failed', 
+                                metadata);
+                            $("#errTxt").html(
+                                "<b>Something went wrong. " +
+                                "Please try again later.</b>"
+                            );
+                            $("#errorMsg").removeClass("hide");
+                        }
+                    } catch (err) {
+                        console.log(err);
+                        $("#errTxt").html(
+                            "<b>Something went wrong. " +
+                            "Please try again later.</b>"
+                        );
+                        $("#errorMsg").removeClass("hide");
+                    }
+                }
+            }
+        } else {
+            $("#errTxt").html("<b>Please enter a valid email address.</b>");
+            $("#errorMsg").removeClass("hide");
+        }
+    };
+
+    $('#detailsSubmitBtn').on('click', function (callback) {
+        if (areInputsValid()) {
+            $("#successMsg").addClass("hide");
+            $("#errorMsg").addClass("hide");
+            $('#detailsSubmitBtn').attr('disabled', true);
+        
+            if (window.XMLHttpRequest) var req = new XMLHttpRequest();
+            else var req = new ActiveXObject("Microsoft.XMLHTTP");
+            formPhone1 = $('#inputMobile').val();
+            console.log(formPhone1);
+            formPhone = encodeURIComponent(formPhone1);
+            console.log(formPhone);
+            formEmail = $('#inputEmail').val();
+            formPassword = $('#inputPassword').val();
+            formAdCardCode = $('#inputCouponCode').val();
+            var metadata = {
+                phone: $('#inputMobile').val(),
+                email: $('#inputEmail').val(),
+                couponCode: $('#inputCouponCode').val()
+            }
+            req.open(
+                'GET', 'http://services.sokrati.com/smsSignupService' + 
+                '/leadVerificationForSmsSignup?email=' + formEmail +
+                '&mobile=' + formPhone + '&password=' + formPassword + 
+                '&adCardCode=' + formAdCardCode
+            );
+            req.send();
+            $("#loading").removeClass('hide');
+            req.onreadystatechange = function() {
+                $("#loading").addClass('hide');
+                if (req.readyState == 4) {
+                    try {
+                        var res = JSON.parse(req.responseText);
+                        if (req.status == 200) {
+                            if (res && res.status == "SUCCESS") {
+                                formLeadid = res.leadid;
+                                if (res.url != null) {
+                                    if (res.url.indexOf("dsrt") != -1 ) {
+                                        Intercom(
+                                            'trackEvent', 
+                                            'Client-redirected-dsrt', 
+                                            metadata
+                                        );
+                                        redirctUrl = _sokFormObject.dsrtUrl;
+                                        $("#redirMsg").removeClass('hide');    
+                                    } else {
+                                        Intercom(
+                                            'trackEvent', 
+                                            'Lead-Verification-Successful', 
+                                            metadata
+                                        );
+                                        sendCode(
+                                            formEmail, 
+                                            formPhone, 
+                                            'detailsForm'
+                                        );
+                                    }
+                                } else {
+                                    Intercom(
+                                        'trackEvent', 
+                                        'Lead-Verification-Successful', 
+                                        metadata
+                                    );
+                                    sendCode(
+                                        formEmail, 
+                                        formPhone, 
+                                        'detailsForm'
+                                    );
+                                }
+                            } else if (res.error != null || res.error == true) {
+                                Intercom(
+                                    'trackEvent', 
+                                    'ERROR-Get-leadVerificationForSmsSignup-Failed', 
+                                    metadata
+                                );
+                                $("#errTxt").html(
+                                    "<b>Something went wrong. " +
+                                    "Please try again later.</b>"
+                                );
+                                $("#errorMsg").removeClass("hide");
+                                console.log(res.error);
+                            }
+                        } else {
+                            metadata = {
+                                phone: $('#inputMobile').val(),
+                                email: $('#inputEmail').val(),
+                                errorStatus: req.status
+                            }
+                            Intercom(
+                                'trackEvent', 
+                                'ERROR-Get-leadVerificationForSmsSignup-Failed', 
+                                metadata
+                            );
+                            $("#errTxt").html(
+                                "<b>Something went wrong. Please" +
+                                " try again later.</b>"
+                            );
+                            $("#errorMsg").removeClass("hide");
+                        }
+                    } catch (error) {
+                        console.log(error);
+                        $("#errTxt").html(
+                            "<b>Something went wrong. Please" +
+                            " try again later.</b>"
+                        );
+                        $("#errorMsg").removeClass("hide");
+                    }
+                }
+            }
+        }
+    });
+});
