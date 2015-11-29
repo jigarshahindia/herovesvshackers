@@ -1,0 +1,20 @@
+{
+  "name": "embark",
+  "version": "1.0.0",
+  "description": "Project built @HerosVsHackers hackathon",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Jigar.Shah",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.14.1",
+    "crypto": "0.0.3",
+    "express": "^4.13.3",
+    "mongoose": "^4.2.8",
+    "mongoose-encryption": "^1.2.2",
+    "morgan": "^1.6.1",
+    "python-shell": "^0.2.0"
+  }
+}
